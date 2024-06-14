@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Temperatur</title>
+</head>
+
+<body>
+    <h1>Prediksi Temperatur</h1>
+    <form action="/predict" method="post">
+        <label for="timestamp">Timestamp untuk Prediksi:</label>
+        <input type="datetime-local" id="timestamp" name="timestamp" required>
+        <button type="submit">Lakukan Prediksi</button>
+    </form>
+    {% if last_temp %}
+    <h2>Temperatur terakhir: {{ last_temp }} °C</h2>
+    {% endif %}
+    {% if warning_message %}
+    <p style="color: red;">{{ warning_message }}</p>
+    {% endif %}
+</body>
+
+</html>
