@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Forecasting{% endblock %}
+
+{% block content %}
+<!-- forecasting.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Forecasting</title>
+</head>
+
+<body>
+    <h2>Forecasting</h2>
+    <form id="forecast-form">
+        <label for="input-date">Select Date and Time:</label>
+        <input type="datetime-local" id="input-date" name="input-date" required>
+        <button type="submit">Predict</button>
+    </form>
+    <div id="forecast-result">
+        <!-- Hasil prediksi akan ditampilkan di sini -->
+    </div>
+</body>
+
+</html>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#forecast-form').submit(function (event) {
+            event.preventDefault();
+            var inputDate = $('#input-date').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/forecast',
+                data: {
+                    'input-date': inputDate
+                },
+                success: function (response) {
+                    console.log(response);
+                    // Tampilkan hasil prediksi
+                    // $('#forecast-result').html('<p>Predicted Value: ' + response.predicted_value + '</p>');
+                    // if (response.warning) {
+                    //     $('#forecast-result').append('<p style="color:red;">Warning: Melebihi SLA</p>');
+                    // }
+                },
+                error: function () {
+                    alert('Error in predicting');
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

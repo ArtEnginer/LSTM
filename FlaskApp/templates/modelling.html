@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Modelling{% endblock %}
+
+{% block content %}
+<h1>Train LSTM Model</h1>
+<form enctype="multipart/form-data">
+    <div>
+        <label for="file">Upload Dataset:</label>
+        <input type="file" name="file" id="file" required>
+    </div>
+    <div>
+        <label for="optimizer">Optimizer:</label>
+        <select name="optimizer" id="optimizer" required>
+            <option value="adam">Adam</option>
+            <option value="sgd">SGD</option>
+            <option value="rmsprop">RMSprop</option>
+        </select>
+    </div>
+    <div>
+        <label for="loss">Loss Function:</label>
+        <select name="loss" id="loss" required>
+            <option value="mean_squared_error">Mean Squared Error</option>
+            <option value="mean_absolute_error">Mean Absolute Error</option>
+        </select>
+    </div>
+    <div>
+        <label for="epochs">Epochs:</label>
+        <input type="number" name="epochs" id="epochs" value="10" required>
+    </div>
+    <div>
+        <label for="batch_size">Batch Size:</label>
+        <input type="number" name="batch_size" id="batch_size" value="1" required>
+    </div>
+    <div>
+        <label for="train_size">Training Data Percentage:</label>
+        <input type="number" name="train_size" id="train_size" value="0.7" step="0.1" min="0.1" max="0.9" required>
+    </div>
+    <button type="submit" class="btn-submit">Train Model</button>
+</form>
+
+<div id="flash-message"></div>
+
+
+<div id="output-details">
+    <!-- Detail output (seperti loss) akan ditampilkan di sini -->
+</div>
+<script>
+    $(document).ready(function () {
+        $('.btn-submit').on('click', function () {
+            // Tampilkan animasi loading saat tombol ditekan
+            $('#loading-overlay').addClass('loading');
+        });
+
+        $('form').on('submit', function (event) {
+            event.preventDefault(); // Menghentikan pengiriman formulir standar
+
+            var formData = new FormData($(this)[0]);
+
+            $.ajax({
+                type: 'POST',
+                url: '/modelling_proses',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    // Hapus animasi loading setelah respons diterima
+                    $('#loading-overlay').removeClass('loading');
+
+                    // Tampilkan pesan sukses di flash message
+                    $('#flash-message').html('<div class="success">Model trained successfully</div>');
+
+                    var outputDetails = response.output_details;
+                    var lossValue = outputDetails.loss_value;
+                    // var otherMetric = outputDetails.other_metric;
+
+                    $('#input-details').html(`
+                    <p><strong>Training Data Percentage:</strong> ${formData.get('train_size')}</p>
+                `);
+
+                    $('#output-details').html(`
+                    <p><strong>Loss Value:</strong> ${lossValue}</p>
+                    <!-- Tambahkan tampilan untuk metrik lain jika diperlukan -->
+                    <!-- <p><strong>Other Metric:</strong></p> -->
+                `);
+                },
+                error: function (error) {
+                    // Hapus animasi loading jika terjadi kesalahan
+                    $('#loading-overlay').removeClass('loading');
+
+                    // Tampilkan pesan error jika ada
+                    $('#flash-message').html('<div class="error">Error training model</div>');
+                }
+            });
+        });
+    });
+</script>
+<style>
+    /* Gaya untuk animasi loading */
+    #loading-overlay {
+        position: fixed;
+        z-index: 9999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        /* Ubah transparansi menjadi lebih gelap */
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #loading-overlay.loading {
+        display: flex;
+        /* Tampilkan overlay saat loading */
+    }
+
+    #loading-spinner {
+        border: 8px solid rgba(255, 255, 255, 0.3);
+        /* Warna border putih dengan sedikit transparansi */
+        border-top: 8px solid #3498db;
+        /* Warna utama lingkaran loading */
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        /* Animasi putar */
+    }
+
+    .caption-spinner {
+        text-align: center;
+        margin-top: 20px;
+        /* Tingkatkan jarak dari spinner */
+        color: #ffffff;
+        /* Warna teks putih */
+        font-family: Arial, sans-serif;
+    }
+
+    .caption-spinner>span {
+        display: block;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+<!-- Tambahkan elemen overlay untuk animasi loading -->
+<div id="loading-overlay">
+    <div id="loading-spinner">
+    </div>
+    <div class="caption-spinner">
+        <p>Mohon tunggu, proses modelling sedang berlangsung...</p>
+        <span>
+            Anda tidak dapat refresh halaman ini karena akan mengulang proses modelling.
+        </span>
+    </div>
+</div>
+
+
+{% endblock %}
