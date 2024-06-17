@@ -3,6 +3,43 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>Dashboard</h1>
-<p>Welcome to the dashboard.</p>
+<div class="container mt-5">
+    <div class="alert alert-info">
+        {{ message }}
+        {% if "Model has been created" in message %}
+        <a href="{{ url_for('model_history') }}">View Model Training History</a>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-body row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-header">Modelling</h5>
+                        <p class="card-text">Go to the modeling page to create or update your model.</p>
+                        <a href="/modelling" class="btn btn-primary">Go to Modeling</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body ">
+                        <h5 class="card-header">Forecasting</h5>
+                        <p class="card-text">Go to the forecasting page to make predictions.</p>
+                        <a href="/forecasting" class="btn btn-primary">Go to Forecasting</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-header">Realtime Early Warning</h5>
+                        <p class="card-text">Go to the Realtime Early Warning page to monitor alerts.</p>
+                        <a href="" class="btn btn-primary">Go to Realtime Early Warning</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

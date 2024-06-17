@@ -3,48 +3,88 @@
 {% block title %}Modelling{% endblock %}
 
 {% block content %}
-<h1>Train LSTM Model</h1>
-<form enctype="multipart/form-data">
-    <div>
-        <label for="file">Upload Dataset:</label>
-        <input type="file" name="file" id="file" required>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h1>Train LSTM Model</h1>
+            </div>
+            <div class="card-body">
+                <form enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Upload Dataset:</label>
+                        <input type="file" class="form-control" name="file" id="file" required>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label for="optimizer" class="form-label">Optimizer:</label>
+                            <select class="form-select" name="optimizer" id="optimizer" required>
+                                <option value="adam">Adam</option>
+                                <option value="sgd">SGD</option>
+                                <option value="rmsprop">RMSprop</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="loss" class="form-label">Loss Function:</label>
+                            <select class="form-select" name="loss" id="loss" required>
+                                <option value="mean_squared_error">Mean Squared Error</option>
+                                <option value="mean_absolute_error">Mean Absolute Error</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label for="epochs" class="form-label">Epochs:</label>
+                            <input type="number" class="form-control" name="epochs" id="epochs" value="10" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="batch_size" class="form-label">Batch Size:</label>
+                            <input type="number" class="form-control" name="batch_size" id="batch_size" value="1"
+                                required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-md-4">
+                            <label for="time_step" class="form-label">Time Step:</label>
+                            <input type="number" class="form-control" name="time_step" id="time_step" value="1"
+                                required>
+                        </div>
+                        <div class="col-md-4">
+
+                            <label for="train_size" class="form-label">Training Data Percentage:</label>
+                            <input type="number" class="form-control" name="train_size" id="train_size" value="0.7"
+                                step="0.1" min="0.1" max="0.9" required>
+                        </div>
+                        <div class="col-md-4">
+
+                            <label for="validation_size" class="form-label ">Validation Data Percentage:</label>
+                            <input type="number" class="form-control" name="validation_size" id="validation_size"
+                                value="0.2" step="0.1" min="0.1" max="0.9" required>
+                        </div>
+                    </div>
+                    <!-- validation size -->
+
+
+                    <button type="submit" class="btn btn-primary btn-submit">Train Model</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div>
-        <label for="optimizer">Optimizer:</label>
-        <select name="optimizer" id="optimizer" required>
-            <option value="adam">Adam</option>
-            <option value="sgd">SGD</option>
-            <option value="rmsprop">RMSprop</option>
-        </select>
-    </div>
-    <div>
-        <label for="loss">Loss Function:</label>
-        <select name="loss" id="loss" required>
-            <option value="mean_squared_error">Mean Squared Error</option>
-            <option value="mean_absolute_error">Mean Absolute Error</option>
-        </select>
-    </div>
-    <div>
-        <label for="epochs">Epochs:</label>
-        <input type="number" name="epochs" id="epochs" value="10" required>
-    </div>
-    <div>
-        <label for="batch_size">Batch Size:</label>
-        <input type="number" name="batch_size" id="batch_size" value="1" required>
-    </div>
-    <div>
-        <label for="train_size">Training Data Percentage:</label>
-        <input type="number" name="train_size" id="train_size" value="0.7" step="0.1" min="0.1" max="0.9" required>
-    </div>
-    <button type="submit" class="btn-submit">Train Model</button>
-</form>
+</div>
+
 
 <div id="flash-message"></div>
 
-
-<div id="output-details">
-    <!-- Detail output (seperti loss) akan ditampilkan di sini -->
+<!-- Modal untuk menampilkan hasil proses modelling -->
+<div id="output-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="output-details">
+            <!-- Detail output (seperti loss) akan ditampilkan di sini -->
+        </div>
+    </div>
 </div>
+
 <script>
     $(document).ready(function () {
         $('.btn-submit').on('click', function () {
@@ -72,17 +112,15 @@
 
                     var outputDetails = response.output_details;
                     var lossValue = outputDetails.loss_value;
-                    // var otherMetric = outputDetails.other_metric;
-
-                    $('#input-details').html(`
-                    <p><strong>Training Data Percentage:</strong> ${formData.get('train_size')}</p>
-                `);
 
                     $('#output-details').html(`
-                    <p><strong>Loss Value:</strong> ${lossValue}</p>
-                    <!-- Tambahkan tampilan untuk metrik lain jika diperlukan -->
-                    <!-- <p><strong>Other Metric:</strong></p> -->
-                `);
+                        <p><strong>Loss Value:</strong> ${lossValue}</p>
+                        <!-- Tambahkan tampilan untuk metrik lain jika diperlukan -->
+                        <!-- <p><strong>Other Metric:</strong></p> -->
+                    `);
+
+                    // Tampilkan modal
+                    $('#output-modal').css('display', 'block');
                 },
                 error: function (error) {
                     // Hapus animasi loading jika terjadi kesalahan
@@ -93,8 +131,21 @@
                 }
             });
         });
+
+        // Fungsi untuk menutup modal saat tombol close ditekan
+        $('.close').on('click', function () {
+            $('#output-modal').css('display', 'none');
+        });
+
+        // Fungsi untuk menutup modal saat klik di luar modal
+        $(window).on('click', function (event) {
+            if (event.target.id === 'output-modal') {
+                $('#output-modal').css('display', 'none');
+            }
+        });
     });
 </script>
+
 <style>
     /* Gaya untuk animasi loading */
     #loading-overlay {
@@ -105,7 +156,6 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.6);
-        /* Ubah transparansi menjadi lebih gelap */
         display: none;
         justify-content: center;
         align-items: center;
@@ -113,27 +163,21 @@
 
     #loading-overlay.loading {
         display: flex;
-        /* Tampilkan overlay saat loading */
     }
 
     #loading-spinner {
         border: 8px solid rgba(255, 255, 255, 0.3);
-        /* Warna border putih dengan sedikit transparansi */
         border-top: 8px solid #3498db;
-        /* Warna utama lingkaran loading */
         border-radius: 50%;
         width: 50px;
         height: 50px;
         animation: spin 1s linear infinite;
-        /* Animasi putar */
     }
 
     .caption-spinner {
         text-align: center;
         margin-top: 20px;
-        /* Tingkatkan jarak dari spinner */
         color: #ffffff;
-        /* Warna teks putih */
         font-family: Arial, sans-serif;
     }
 
@@ -152,7 +196,45 @@
             transform: rotate(360deg);
         }
     }
+
+    /* Gaya untuk modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+        padding-top: 60px;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
 </style>
+
 <!-- Tambahkan elemen overlay untuk animasi loading -->
 <div id="loading-overlay">
     <div id="loading-spinner">
@@ -164,6 +246,5 @@
         </span>
     </div>
 </div>
-
 
 {% endblock %}

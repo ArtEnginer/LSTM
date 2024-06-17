@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}History Model{% endblock %}
+
+{% block content %}
+
+
+<h1>Model Training History</h1>
+{% if image_base64 %}
+<img src="data:image/png;base64,{{ image_base64 }}" alt="Training History">
+{% else %}
+<p>No history available.</p>
+{% endif %}
+
+{% endblock %}

@@ -3,55 +3,91 @@
 {% block title %}Forecasting{% endblock %}
 
 {% block content %}
-<!-- forecasting.html -->
-<!DOCTYPE html>
-<html>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="mt-4">Forecasting</h1>
+            </div>
+            <div class="card-body">
 
-<head>
-    <title>Forecasting</title>
-</head>
-
-<body>
-    <h2>Forecasting</h2>
-    <form id="forecast-form">
-        <label for="input-date">Select Date and Time:</label>
-        <input type="datetime-local" id="input-date" name="input-date" required>
-        <button type="submit">Predict</button>
-    </form>
-    <div id="forecast-result">
-        <!-- Hasil prediksi akan ditampilkan di sini -->
+                <form id="forecast-form" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="file">Upload Latest Data File:</label>
+                        <input type="file" class="form-control-file" id="file" name="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Predict</button>
+                </form>
+            </div>
+        </div>
     </div>
-</body>
+</div>
 
-</html>
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="result" class="mt-5">
+                    <!-- Results will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
-        $('#forecast-form').submit(function (event) {
-            event.preventDefault();
-            var inputDate = $('#input-date').val();
+        $('#forecast-form').on('submit', function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
 
             $.ajax({
                 type: 'POST',
-                url: '/forecast',
-                data: {
-                    'input-date': inputDate
-                },
+                url: '{{ url_for("forecast") }}',
+                data: formData,
+                contentType: false,
+                processData: false,
                 success: function (response) {
-                    console.log(response);
-                    // Tampilkan hasil prediksi
-                    // $('#forecast-result').html('<p>Predicted Value: ' + response.predicted_value + '</p>');
-                    // if (response.warning) {
-                    //     $('#forecast-result').append('<p style="color:red;">Warning: Melebihi SLA</p>');
-                    // }
+                    if (response.status === 'success') {
+                        var predictions = response.predictions;
+                        var resultHtml = '<h2>Prediction Results</h2>';
+
+                        resultHtml += '<div class="row mt-3"><div class="col-md-6">';
+                        resultHtml += '<h4>15 Minutes Ahead</h4>';
+                        resultHtml += '<table class="table table-bordered table-striped">';
+                        resultHtml += '<thead class="thead-dark"><tr><th>Parameter</th><th>Value</th></tr></thead>';
+                        resultHtml += '<tbody>';
+                        resultHtml += '<tr><td>Temperature 1</td><td>' + predictions['15_minutes']['temperature'][0] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 2</td><td>' + predictions['15_minutes']['temperature'][1] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 3</td><td>' + predictions['15_minutes']['temperature'][2] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 4</td><td>' + predictions['15_minutes']['temperature'][3] + '</td></tr>';
+                        resultHtml += '<tr><td>Humidity 1</td><td>' + predictions['15_minutes']['humidity'][0] + '</td></tr>';
+                        resultHtml += '<tr><td>Humidity 2</td><td>' + predictions['15_minutes']['humidity'][1] + '</td></tr>';
+                        resultHtml += '</tbody></table></div>';
+
+                        resultHtml += '<div class="col-md-6">';
+                        resultHtml += '<h4>30 Minutes Ahead</h4>';
+                        resultHtml += '<table class="table table-bordered table-striped">';
+                        resultHtml += '<thead class="thead-dark"><tr><th>Parameter</th><th>Value</th></tr></thead>';
+                        resultHtml += '<tbody>';
+                        resultHtml += '<tr><td>Temperature 1</td><td>' + predictions['30_minutes']['temperature'][0] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 2</td><td>' + predictions['30_minutes']['temperature'][1] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 3</td><td>' + predictions['30_minutes']['temperature'][2] + '</td></tr>';
+                        resultHtml += '<tr><td>Temperature 4</td><td>' + predictions['30_minutes']['temperature'][3] + '</td></tr>';
+                        resultHtml += '<tr><td>Humidity 1</td><td>' + predictions['30_minutes']['humidity'][0] + '</td></tr>';
+                        resultHtml += '<tr><td>Humidity 2</td><td>' + predictions['30_minutes']['humidity'][1] + '</td></tr>';
+                        resultHtml += '</tbody></table></div></div>';
+
+                        $('#result').html(resultHtml);
+                    } else {
+                        $('#result').html('<div class="alert alert-danger mt-3">Error: ' + response.message + '</div>');
+                    }
                 },
-                error: function () {
-                    alert('Error in predicting');
+                error: function (xhr, status, error) {
+                    $('#result').html('<div class="alert alert-danger mt-3">Error: ' + error + '</div>');
                 }
             });
         });
     });
 </script>
-
 {% endblock %}
