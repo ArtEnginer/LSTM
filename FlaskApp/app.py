@@ -51,6 +51,7 @@ def build_and_train_model(X_train, y_train, X_val, y_val, input_shape, optimizer
 
 @app.route('/')
 def dashboard():
+    active = 'dashboard'
     model_path = 'model/model.h5'
     if os.path.exists(model_path):
         model_creation_time = os.path.getctime(model_path)
@@ -63,11 +64,12 @@ def dashboard():
     else:
         message = "Please create the model."
 
-    return render_template('dashboard.html', message=message)
+    return render_template('dashboard.html', active=active, message=message)
 
 @app.route('/modelling', methods=['GET', 'POST'])
-def modelling():            
-    return render_template('modelling.html')
+def modelling():         
+    active = 'modelling'   
+    return render_template('modelling.html', active=active)
 
 @app.route('/modelling_proses', methods=['POST'])
 def modelling_proses():
@@ -156,7 +158,8 @@ def model_history():
 
 @app.route('/forecasting')
 def forecasting():
-    return render_template('forecasting.html')
+    active = 'forecasting'
+    return render_template('forecasting.html', active=active)
 
 @app.route('/forecast', methods=['POST'])
 def forecast():
@@ -221,7 +224,8 @@ def forecast():
 
 @app.route('/realtime_forecast')
 def realtime_forecast():
-    return render_template('realtime_forecast.html')
+    active = 'realtime_forecast'
+    return render_template('realtime_forecast.html', active=active)
 
 @app.route('/realtime_predict', methods=['POST'])
 def realtime_predict():

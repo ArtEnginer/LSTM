@@ -63,9 +63,10 @@
                         </div>
                     </div>
                     <!-- validation size -->
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-success btn-submit full-width-btn">Train Model</button>
+                    </div>
 
-
-                    <button type="submit" class="btn btn-primary btn-submit">Train Model</button>
                 </form>
             </div>
         </div>
@@ -73,12 +74,12 @@
 </div>
 
 
-<div id="flash-message"></div>
 
-<!-- Modal untuk menampilkan hasil proses modelling -->
+
 <div id="output-modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
+        <div id="flash-message"></div>
         <div id="output-details">
             <!-- Detail output (seperti loss) akan ditampilkan di sini -->
         </div>
@@ -115,6 +116,10 @@
 
                     $('#output-details').html(`
                         <p><strong>Loss Value:</strong> ${lossValue}</p>
+
+                        <p>
+                        file telah diupload dan model berhasil dilatih.
+                        </p>
                         <!-- Tambahkan tampilan untuk metrik lain jika diperlukan -->
                         <!-- <p><strong>Other Metric:</strong></p> -->
                     `);
@@ -232,6 +237,15 @@
         color: black;
         text-decoration: none;
         cursor: pointer;
+    }
+
+    .full-width-btn {
+        display: block;
+        width: 100%;
+        margin: 0;
+        /* Remove default margin for better control */
+        box-sizing: border-box;
+        /* Ensure padding and border are included in width */
     }
 </style>
 
