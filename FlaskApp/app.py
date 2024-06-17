@@ -213,20 +213,14 @@ def forecast():
                 }
             }
         }
-        
         return jsonify(response)
-    
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
-
-
-    
 
 @app.route('/realtime_forecast')
 def realtime_forecast():
     active = 'realtime_forecast'
     return render_template('realtime_forecast.html', active=active)
-
 @app.route('/realtime_predict', methods=['POST'])
 def realtime_predict():
     try:
