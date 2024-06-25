@@ -10,6 +10,9 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css" />
+
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
 </head>
 
 <body>
@@ -21,12 +24,12 @@
             <div class="d-flex ms-auto">
                 <a href="{{ url_for('dashboard') }}"
                     class="btn btn-outline-success me-2{{' active' if request.path == url_for('dashboard')}}">Dashboard</a>
+                <a href="{{ url_for('dataset') }}"
+                    class="btn btn-outline-success {{' active' if request.path == url_for('dataset')}}">Dataset</a>
                 <a href="{{ url_for('modelling') }}"
                     class="btn btn-outline-success me-2 {{' active' if request.path == url_for('modelling')}}">Modelling</a>
                 <a href="{{ url_for('forecasting') }}"
                     class="btn btn-outline-success me-2 {{' active' if request.path == url_for('forecasting')}}">Forecasting</a>
-                <a href="{{ url_for('realtime_forecast') }}"
-                    class="btn btn-outline-success {{' active' if request.path == url_for('realtime_forecast')}}">Realtime</a>
             </div>
         </div>
     </nav>

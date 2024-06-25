@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, Response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, Response, jsonify, send_file
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +15,8 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Load and preprocess data
 def load_data(file_path):
     data = pd.read_excel(file_path, parse_dates=['Timestamp'])
@@ -217,71 +218,57 @@ def forecast():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/realtime_forecast')
-def realtime_forecast():
-    active = 'realtime_forecast'
-    return render_template('realtime_forecast.html', active=active)
-@app.route('/realtime_predict', methods=['POST'])
-def realtime_predict():
+@app.route('/download_template', methods=['GET', 'POST'])
+def download_template():
+    # get form templates/ file
+    return send_file('templates/dataset.xlsx', as_attachment=True)
+
+@app.route('/dataset', methods=['GET', 'POST'])
+def dataset():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and file.filename.endswith('.xlsx'):
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'dataset.xlsx'))
+            return "File uploaded successfully"
+        else:
+            return "Invalid file format", 400
+    return render_template('dataset.html', active='dataset')
+
+@app.route('/dataset-source')
+def dataset_source():
     try:
-        # Load the model
-        model = load_model('model/model.h5')
-        
-        # Get recent data
-        recent_data = get_recent_data()
+        dataset = pd.read_excel(os.path.join(app.config['UPLOAD_FOLDER'], 'dataset.xlsx'))
+        total_records = len(dataset)
 
-        if recent_data.empty:
-            return jsonify({'status': 'error', 'message': 'No recent data available'})
+        # Get pagination parameters from DataTables request
+        start = int(request.args.get('start', 0))
+        length = int(request.args.get('length', 10))
+        search_value = request.args.get('search[value]', '')
 
-        # Preprocess the recent data
-        scaled_data, scaler = preprocess_data(recent_data)
+        # Filtering
+        if search_value:
+            dataset = dataset[dataset.apply(lambda row: row.astype(str).str.contains(search_value).any(), axis=1)]
 
-        # Define time step
-        time_step = 10  # Sesuaikan berdasarkan waktu step yang digunakan saat pelatihan
-        X_recent, _ = create_dataset(scaled_data, time_step)
+        # Sorting
+        order_column = int(request.args.get('order[0][column]', 0))
+        order_dir = request.args.get('order[0][dir]', 'asc')
+        column_name = dataset.columns[order_column]
+        dataset = dataset.sort_values(by=column_name, ascending=(order_dir == 'asc'))
 
-        # Get the last sequence for prediction
-        X_input = X_recent[-1].reshape(1, time_step, X_recent.shape[2])
+        # Pagination
+        data_subset = dataset.iloc[start:start + length]
 
-        # Make prediction for the next 15-30 minutes
-        forecast_steps = 15  # 15 minutes prediction, adjust as needed
-        predictions = []
-        for _ in range(forecast_steps):
-            next_prediction = model.predict(X_input)
-            next_prediction = scaler.inverse_transform(next_prediction)
-            predictions.append(next_prediction[0])
-            X_input = np.append(X_input[:, 1:, :], next_prediction.reshape(1, 1, X_input.shape[2]), axis=1)
+        # Convert to dictionary
+        data = data_subset.to_dict(orient='records')
 
-        # Convert predictions to DataFrame
-        forecast_time = [datetime.now() + timedelta(minutes=i) for i in range(1, forecast_steps + 1)]
-        forecast_df = pd.DataFrame(predictions, index=forecast_time, columns=recent_data.columns[:-1])
-
-        response = {
-            'status': 'success',
-            'predictions': forecast_df.to_dict(orient='index')
-        }
-
-        return jsonify(response)
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': total_records,
+            'recordsFiltered': len(dataset),
+            'data': data
+        })
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
-
-def get_recent_data():
-    # Misalnya, Anda mengambil data dari database atau API
-    # Contoh data dummy untuk ilustrasi
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=30)  # Data 30 menit terakhir
-    time_range = pd.date_range(start=start_time, end=end_time, freq='T')
-    dummy_data = {
-        'Timestamp': time_range,
-        'RmTmp - DH01_ROW01_LA_TTHT01': np.random.normal(loc=25, scale=1, size=len(time_range)),
-        'RmTmp - DH01_ROW01_LA_TTHT02': np.random.normal(loc=26, scale=1, size=len(time_range)),
-        'RmTmp - DH01_ROW01_LA_TTHT03': np.random.normal(loc=24, scale=1, size=len(time_range)),
-        'RmTmp - DH01_ROW01_LA_TTHT04': np.random.normal(loc=25, scale=1, size=len(time_range)),
-        'RmRhTL - DH01_ROW01_LA_TTHT01': np.random.normal(loc=60, scale=5, size=len(time_range)),
-        'RmRhTL - DH01_ROW01_LA_TTHT02': np.random.normal(loc=62, scale=5, size=len(time_range)),
-    }
-    return pd.DataFrame(dummy_data).set_index('Timestamp')
-
+        return str(e), 500
 
 if __name__ == '__main__':
     if not os.path.exists('uploads'):

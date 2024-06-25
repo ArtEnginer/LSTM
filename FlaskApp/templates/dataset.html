@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset{% endblock %}
+
+{% block content %}
+
+<!-- Form for Uploading Dataset -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Upload Dataset</h4>
+                <!-- note using templates xlsx to download -->
+                <p><a href="{{ url_for('download_template') }}">Download Template</a></p>
+
+            </div>
+            <div class="card-body">
+                <form enctype="multipart/form-data" method="POST" action="/dataset">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" name="file" id="file" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <button type="submit" class="btn btn-primary">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Dataset</h4>
+            </div>
+            <div class="card-body">
+                <table id="datatable" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Real Power Mean (kW)</th>
+                            <th>Temperature 01</th>
+                            <th>Temperature 02</th>
+                            <th>Temperature 03</th>
+                            <th>Temperature 04</th>
+                            <th>Humidity 01</th>
+                            <th>Humidity 02</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        $('#datatable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            ajax: '/dataset-source',
+            columns: [
+                { data: 'Timestamp' },
+                { data: 'PQM08 Real Power Mean (kW)' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT02' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT03' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT04' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT02' }
+            ],
+            search: {
+                caseInsensitive: true
+            },
+            language: {
+                search: "Search:",
+                paginate: {
+                    previous: "Prev",
+                    next: "Next"
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}
