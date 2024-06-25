@@ -10,6 +10,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import EarlyStopping
 
 import os
 
@@ -45,8 +46,20 @@ def build_and_train_model(X_train, y_train, X_val, y_val, input_shape, optimizer
     model.add(LSTM(50, return_sequences=False))
     model.add(Dense(25))
     model.add(Dense(y_train.shape[1]))
-    model.compile(optimizer=optimizer, loss=loss)
-    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=epochs, batch_size=batch_size)
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+    early_stop = EarlyStopping(monitor='val_loss', patience=3) 
+    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=epochs, batch_size=batch_size,callbacks=[early_stop])
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    if os.path.exists('model/accuracy_plot.png'):
+        os.remove('model/accuracy_plot.png')
+    plt.savefig('model/accuracy_plot.png')
+    plt.close()
+
     return model, history
 
 
@@ -74,19 +87,17 @@ def modelling():
 
 @app.route('/modelling_proses', methods=['POST'])
 def modelling_proses():
-    file = request.files['file']
-    optimizer = request.form['optimizer']
-    loss = request.form['loss']
-    epochs = int(request.form['epochs'])
-    batch_size = int(request.form['batch_size'])
-    time_step = int(request.form['time_step'])
-    train_size = float(request.form['train_size'])
-    validation_size = float(request.form['validation_size'])
-    train_status = 0
-    
-    if file:
-        file_path = os.path.join('uploads', file.filename)
-        file.save(file_path)
+    try:
+        optimizer = request.form['optimizer']
+        loss = request.form['loss']
+        epochs = int(request.form['epochs'])
+        batch_size = int(request.form['batch_size'])
+        time_step = int(request.form['time_step'])
+        train_size = float(request.form['train_size'])
+        train_status = 0
+        validation_size = 1 - train_size
+                
+        file_path = os.path.join('uploads', 'dataset.xlsx')
         data = load_data(file_path)
         scaled_data, scaler = preprocess_data(data[['RmTmp - DH01_ROW01_LA_TTHT01', 
                                                     'RmTmp - DH01_ROW01_LA_TTHT02', 
@@ -115,20 +126,40 @@ def modelling_proses():
         train_status = 1
         if train_status == 1:
             flash('Model trained successfully', 'success')
-            
-            loss_value = model.evaluate(X_test, y_test)
+            average_accuracy = np.mean(history.history['accuracy'])
+            average_val_accuracy = np.mean(history.history['val_accuracy'])
+            average_loss = np.mean(history.history['loss'])
+            average_val_loss = np.mean(history.history['val_loss'])
+            rmse = np.sqrt(np.mean(history.history['loss']))
+            mse = np.mean(history.history['loss'])
+
 
             history_df = pd.DataFrame(history.history)
             history_df.to_csv('model/history.csv', index=False)
-
+            
             return jsonify({
                 'status': 'success',
                 'output_details': {
-                    'loss_value': loss_value,
+                    'epochs': epochs,
+                    'batch_size': batch_size,
+                    'time_step': time_step,
+                    'train_size': train_size,
+                    'validation_size': validation_size,
+                    'optimizer': request.form['optimizer'],
+                    'loss': loss,
+                    'average_accuracy': average_accuracy,
+                    'average_val_accuracy': average_val_accuracy,
+                    'average_loss': average_loss,
+                    'average_val_loss': average_val_loss,
+                    'rmse': rmse,
+                    'mse': mse,
+                    'visualizations': {
+                        'accuracy_plot': 'accuracy_plot.png'
+                    }
                 }
             })
-        else:
-            return jsonify({'status': 'error'})
+    except FileNotFoundError:
+        return jsonify({ 'status': 'error', 'message': 'File not found' })
 
 @app.route('/model_history')
 def model_history():
@@ -229,7 +260,7 @@ def dataset():
         file = request.files['file']
         if file and file.filename.endswith('.xlsx'):
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'dataset.xlsx'))
-            return "File uploaded successfully"
+            return redirect(url_for('dataset'))
         else:
             return "Invalid file format", 400
     return render_template('dataset.html', active='dataset')
@@ -267,9 +298,176 @@ def dataset_source():
             'recordsFiltered': len(dataset),
             'data': data
         })
-    except Exception as e:
-        return str(e), 500
+    except FileNotFoundError:
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'data': []
+        })
+    
+@app.route('/dataset_preprocessing')
+def dataset_preprocessing():
+    try:
+        data = load_data('uploads/dataset.xlsx')
+      
+        data = data[['PQM08 Real Power Mean (kW)',
+                    'RmTmp - DH01_ROW01_LA_TTHT01', 
+                    'RmTmp - DH01_ROW01_LA_TTHT02', 
+                    'RmTmp - DH01_ROW01_LA_TTHT03', 
+                    'RmTmp - DH01_ROW01_LA_TTHT04',
+                    'RmRhTL - DH01_ROW01_LA_TTHT01', 
+                    'RmRhTL - DH01_ROW01_LA_TTHT02']]
+        data = data.dropna()
+        total_records = len(data)
+        data = data.reset_index()
+        data['Timestamp'] = data['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        
 
+        ## Get pagination parameters from DataTables request
+        start = int(request.args.get('start', 0))
+        length = int(request.args.get('length', 10))
+        search_value = request.args.get('search[value]', '')
+
+        # Filtering
+        if search_value:
+            data = data[data.apply(lambda row: row.astype(str).str.contains(search_value).any(), axis=1)]
+
+        # Sorting
+        order_column = int(request.args.get('order[0][column]', 0))
+        order_dir = request.args.get('order[0][dir]', 'asc')
+        column_name = data.columns[order_column]
+        data = data.sort_values(by=column_name, ascending=(order_dir == 'asc'))
+
+        # Pagination
+        data_subset = data.iloc[start:start + length]
+
+        df = data_subset.to_dict(orient='records')
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': total_records,
+            'recordsFiltered': len(data),
+            'data': df
+        })
+
+    except FileNotFoundError:
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'data': []
+        })
+
+@app.route('/dataset-normalization')
+def dataset_normalization():
+    try:
+        data = load_data('uploads/dataset.xlsx')
+    
+        data = data[['PQM08 Real Power Mean (kW)',
+                    'RmTmp - DH01_ROW01_LA_TTHT01', 
+                    'RmTmp - DH01_ROW01_LA_TTHT02', 
+                    'RmTmp - DH01_ROW01_LA_TTHT03', 
+                    'RmTmp - DH01_ROW01_LA_TTHT04',
+                    'RmRhTL - DH01_ROW01_LA_TTHT01', 
+                    'RmRhTL - DH01_ROW01_LA_TTHT02']]
+        data = data.dropna()
+        data = data.reset_index()
+        data['Timestamp'] = data['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        
+        scaled_data, scaler = preprocess_data(data[['RmTmp - DH01_ROW01_LA_TTHT01', 
+                                                'RmTmp - DH01_ROW01_LA_TTHT02', 
+                                                'RmTmp - DH01_ROW01_LA_TTHT03', 
+                                                'RmTmp - DH01_ROW01_LA_TTHT04',
+                                                'RmRhTL - DH01_ROW01_LA_TTHT01', 
+                                                'RmRhTL - DH01_ROW01_LA_TTHT02']])
+        scaled_data = pd.DataFrame(scaled_data, columns=['RmTmp - DH01_ROW01_LA_TTHT01', 
+                                                        'RmTmp - DH01_ROW01_LA_TTHT02', 
+                                                        'RmTmp - DH01_ROW01_LA_TTHT03', 
+                                                        'RmTmp - DH01_ROW01_LA_TTHT04',
+                                                        'RmRhTL - DH01_ROW01_LA_TTHT01', 
+                                                        'RmRhTL - DH01_ROW01_LA_TTHT02'])
+        scaled_data['Timestamp'] = data['Timestamp']
+        scaled_data = scaled_data.reset_index(drop=True)
+        
+        total_records = len(scaled_data)
+        # Get pagination parameters from DataTables request
+        start = int(request.args.get('start', 0))
+        length = int(request.args.get('length', 10))
+        search_value = request.args.get('search[value]', '')
+
+        # Filtering
+        if search_value:
+            scaled_data = scaled_data[scaled_data.apply(lambda row: row.astype(str).str.contains(search_value).any(), axis=1)]
+
+        # Sorting
+        order_column = int(request.args.get('order[0][column]', 0))
+        order_dir = request.args.get('order[0][dir]', 'asc')
+        column_name = scaled_data.columns[order_column]
+        scaled_data = scaled_data.sort_values(by=column_name, ascending=(order_dir == 'asc'))
+
+        # Pagination
+        data_subset = scaled_data.iloc[start:start + length]
+
+        df = data_subset.to_dict(orient='records')
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': total_records,
+            'recordsFiltered': len(scaled_data),
+            'data': df
+        })
+
+    except FileNotFoundError:
+        return jsonify({
+            'draw': request.args.get('draw', 1),
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'data': []
+        })
+    
+@app.route('/dataset_visualization')
+def dataset_visualization():
+    try:
+        data = pd.read_excel('uploads/dataset.xlsx')    
+        # Converting Timestamp column to datetime
+        data['Timestamp'] = pd.to_datetime(data['Timestamp'])
+        
+        # Plotting temperature data
+        plt.figure(figsize=(14, 7))
+        plt.plot(data['Timestamp'], data['RmTmp - DH01_ROW01_LA_TTHT01'], label='TTHT01')
+        plt.plot(data['Timestamp'], data['RmTmp - DH01_ROW01_LA_TTHT02'], label='TTHT02')
+        plt.plot(data['Timestamp'], data['RmTmp - DH01_ROW01_LA_TTHT03'], label='TTHT03')
+        plt.plot(data['Timestamp'], data['RmTmp - DH01_ROW01_LA_TTHT04'], label='TTHT04')
+        plt.xlabel('Timestamp')
+        plt.ylabel('Temperature (°C)')
+        plt.title('Temperature Over Time')
+        plt.legend()
+        plt.grid(True)
+        # if file sudah ada maka timpa dengan yang baru
+        if os.path.exists('static/temperature_plot.png'):
+            os.remove('static/temperature_plot.png')
+        plt.savefig('static/temperature_plot.png')
+        plt.close()
+
+        # Plotting humidity data
+        plt.figure(figsize=(14, 7))
+        plt.plot(data['Timestamp'], data['RmRhTL - DH01_ROW01_LA_TTHT01'], label='TTHT01 Humidity')
+        plt.plot(data['Timestamp'], data['RmRhTL - DH01_ROW01_LA_TTHT02'], label='TTHT02 Humidity')
+        plt.xlabel('Timestamp')
+        plt.ylabel('Humidity (%)')
+        plt.title('Humidity Over Time')
+        plt.legend()
+        plt.grid(True)
+        # if file sudah ada maka timpa dengan yang baru
+        if os.path.exists('static/humidity_plot.png'):
+            os.remove('static/humidity_plot.png')
+        plt.savefig('static/humidity_plot.png')
+        plt.close()
+        return redirect(url_for('dashboard'))
+    except FileNotFoundError:
+        pass
+@app.route('/model/<filename>')
+def model(filename):
+    return send_file(f'model/{filename}', as_attachment=True)
 if __name__ == '__main__':
     if not os.path.exists('uploads'):
         os.makedirs('uploads')

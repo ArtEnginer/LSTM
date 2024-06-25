@@ -36,18 +36,24 @@
                 </div>
             </div>
         </div>
-        <!-- <div class="col-md-4">
-            <div class="card shadow">
-                <h5 class="card-header bg-warning text-white">Realtime Early Warning</h5>
-                <div class="card-body">
-                    <p class="card-text">Go to the Realtime Early Warning page to monitor alerts.</p>
+    </div>
+    <div class="card shadow">
+        <div class="card-header">
+            <a href="/dataset_visualization" class="card-title text-center btn-createviz">Temperature and
+                Humidity Plots</a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <img src="{{ url_for('static', filename='temperature_plot.png') }}" class="img-fluid"
+                        alt="Temperature Plot">
                 </div>
-                <div class="card-footer bg-light">
-                    <small class="text-muted text-center"><a href="/realtime" class="stretched-link">Go to Realtime
-                            Early Warning</a></small>
+                <div class="col-md-12">
+                    <img src="{{ url_for('static', filename='humidity_plot.png') }}" class="img-fluid"
+                        alt="Humidity Plot">
                 </div>
             </div>
-        </div> -->
+        </div>
     </div>
 </div>
 
@@ -82,5 +88,14 @@
         /* Hapus garis bawah */
     }
 </style>
+
+<script>
+
+    // if btn-createviz di klik maka img akan di hapus
+    $('.btn-createviz').on('click', function () {
+        $('.card-body img').remove();
+    });
+
+</script>
 
 {% endblock %}

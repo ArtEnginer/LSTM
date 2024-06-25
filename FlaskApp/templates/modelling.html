@@ -7,14 +7,10 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h1>Train LSTM Model</h1>
+                <h3>Train LSTM Model</h3>
             </div>
             <div class="card-body">
-                <form enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="file" class="form-label">Upload Dataset:</label>
-                        <input type="file" class="form-control" name="file" id="file" required>
-                    </div>
+                <form>
                     <div class="mb-3 row">
                         <div class="col-md-6">
                             <label for="optimizer" class="form-label">Optimizer:</label>
@@ -39,27 +35,20 @@
                         </div>
                         <div class="col-md-6">
                             <label for="batch_size" class="form-label">Batch Size:</label>
-                            <input type="number" class="form-control" name="batch_size" id="batch_size" value="1"
+                            <input type="number" class="form-control" name="batch_size" id="batch_size" value="32"
                                 required>
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <div class="col-md-4">
                             <label for="time_step" class="form-label">Time Step:</label>
-                            <input type="number" class="form-control" name="time_step" id="time_step" value="1"
+                            <input type="number" class="form-control" name="time_step" id="time_step" value="15"
                                 required>
                         </div>
                         <div class="col-md-4">
-
                             <label for="train_size" class="form-label">Training Data Percentage:</label>
                             <input type="number" class="form-control" name="train_size" id="train_size" value="0.7"
                                 step="0.1" min="0.1" max="0.9" required>
-                        </div>
-                        <div class="col-md-4">
-
-                            <label for="validation_size" class="form-label ">Validation Data Percentage:</label>
-                            <input type="number" class="form-control" name="validation_size" id="validation_size"
-                                value="0.2" step="0.1" min="0.1" max="0.9" required>
                         </div>
                     </div>
                     <!-- validation size -->
@@ -73,15 +62,15 @@
     </div>
 </div>
 
-
-
-
 <div id="output-modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <div id="flash-message"></div>
         <div id="output-details">
             <!-- Detail output (seperti loss) akan ditampilkan di sini -->
+        </div>
+        <div id="training-graph">
+            <!-- Training graph will be displayed here -->
         </div>
     </div>
 </div>
@@ -108,29 +97,106 @@
                     // Hapus animasi loading setelah respons diterima
                     $('#loading-overlay').removeClass('loading');
 
-                    // Tampilkan pesan sukses di flash message
-                    $('#flash-message').html('<div class="success">Model trained successfully</div>');
-
                     var outputDetails = response.output_details;
-                    var lossValue = outputDetails.loss_value;
+                    var epochs = outputDetails.epochs;
+                    var batch_size = outputDetails.batch_size;
+                    var optimizer = outputDetails.optimizer;
+                    var loss = outputDetails.loss;
+                    var time_step = outputDetails.time_step;
+                    var train_size = outputDetails.train_size;
+                    var validation_size = outputDetails.validation_size;
+                    var average_accuracy = outputDetails.average_accuracy;
+                    var average_val_accuracy = outputDetails.average_val_accuracy;
+                    var average_loss = outputDetails.average_loss;
+                    var average_val_loss = outputDetails.average_val_loss;
+                    var rmse = outputDetails.rmse;
+                    var mse = outputDetails.mse;
+                    var accuracy_plot = outputDetails.visualizations.accuracy_plot;
 
                     $('#output-details').html(`
-                        <p><strong>Loss Value:</strong> ${lossValue}</p>
+    <table>
+        <tr>
+            <td>Epochs</td>
+              <td>:</td>
+            <td>${epochs}</td>
+        </tr>
+        <tr>
+            <td>Batch Size</td>
+              <td>:</td>
+            <td>${batch_size}</td>
+        </tr>
+        <tr>
+            <td>Optimizer</td>
+              <td>:</td>
+            <td>${optimizer}</td>
+        </tr>
+        <tr>
+            <td>Loss Function</td>
+              <td>:</td>
+            <td>${loss}</td>
+        </tr>
+        <tr>
+            <td>Time Step</td>
+              <td>:</td>
+            <td>${time_step}</td>
+        </tr>
+        <tr>
+            <td>Train Size</td>
+              <td>:</td>
+            <td>${train_size}</td>
+        </tr>
+        <tr>
+            <td>Validation Size</td>
+              <td>:</td>
+            <td>${validation_size}</td>
+        </tr>
+        <tr>
+            <td>Average Accuracy</td>
+              <td>:</td>
+            <td>${average_accuracy}</td>
+        </tr>
+        <tr>
+            <td>Average Validation Accuracy</td>
+              <td>:</td>
+            <td>${average_val_accuracy}</td>
+        </tr>
+        <tr>
+            <td>Average Loss</td>
+              <td>:</td>
+            <td>${average_loss}</td>
+        </tr>
+        <tr>
+            <td>Average Validation Loss</td>
+              <td>:</td>
+            <td>${average_val_loss}</td>
+        </tr>
+        <tr>
+            <td>RMSE</td>
+              <td>:</td>
+            <td>${rmse}</td>
+        </tr>
+        <tr>
+            <td>MSE</td>
+              <td>:</td>
+            <td>${mse}</td>
+        </tr>
+    </table>
+`);
 
-                        <p>
-                        file telah diupload dan model berhasil dilatih.
-                        </p>
-                        <!-- Tambahkan tampilan untuk metrik lain jika diperlukan -->
-                        <!-- <p><strong>Other Metric:</strong></p> -->
-                    `);
+
+                    // Display training graph
+                    $('#training-graph').html(`<img src="{{ url_for('model', filename='accuracy_plot.png') }}" class="img-fluid"
+                        alt="Accuracy Plot">`);
 
                     // Tampilkan modal
                     $('#output-modal').css('display', 'block');
                 },
                 error: function (error) {
+                    // tampilkan message response error
+                    console.log(error.responseJSON.message);
+
                     // Hapus animasi loading jika terjadi kesalahan
                     $('#loading-overlay').removeClass('loading');
-
                     // Tampilkan pesan error jika ada
                     $('#flash-message').html('<div class="error">Error training model</div>');
                 }

@@ -6,7 +6,7 @@
 
 <!-- Form for Uploading Dataset -->
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-md-12 mb-3">
         <div class="card">
             <div class="card-header">
                 <h4>Upload Dataset</h4>
@@ -32,7 +32,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-12">
+
+    <div class="col-md-12 mb-3">
         <div class="card">
             <div class="card-header">
                 <h4>Dataset</h4>
@@ -43,6 +44,56 @@
                         <tr>
                             <th>Timestamp</th>
                             <th>Real Power Mean (kW)</th>
+                            <th>Temperature 01</th>
+                            <th>Temperature 02</th>
+                            <th>Temperature 03</th>
+                            <th>Temperature 04</th>
+                            <th>Humidity 01</th>
+                            <th>Humidity 02</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h4>Dataset Preprocessing</h4>
+            </div>
+            <div class="card-body">
+                <table id="datatable-preprocessing" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Real Power Mean (kW)</th>
+                            <th>Temperature 01</th>
+                            <th>Temperature 02</th>
+                            <th>Temperature 03</th>
+                            <th>Temperature 04</th>
+                            <th>Humidity 01</th>
+                            <th>Humidity 02</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h4>Dataset Normalization</h4>
+            </div>
+            <div class="card-body">
+                <table id="datatable-normalization" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
                             <th>Temperature 01</th>
                             <th>Temperature 02</th>
                             <th>Temperature 03</th>
@@ -70,6 +121,59 @@
             columns: [
                 { data: 'Timestamp' },
                 { data: 'PQM08 Real Power Mean (kW)' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT02' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT03' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT04' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT02' }
+            ],
+            search: {
+                caseInsensitive: true
+            },
+            language: {
+                search: "Search:",
+                paginate: {
+                    previous: "Prev",
+                    next: "Next"
+                }
+            }
+        });
+
+        $('#datatable-preprocessing').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            ajax: '/dataset_preprocessing',
+            columns: [
+                { data: 'Timestamp' },
+                { data: 'PQM08 Real Power Mean (kW)' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT02' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT03' },
+                { data: 'RmTmp - DH01_ROW01_LA_TTHT04' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT01' },
+                { data: 'RmRhTL - DH01_ROW01_LA_TTHT02' }
+            ],
+            search: {
+                caseInsensitive: true
+            },
+            language: {
+                search: "Search:",
+                paginate: {
+                    previous: "Prev",
+                    next: "Next"
+                }
+            }
+        });
+
+        $('#datatable-normalization').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            ajax: '/dataset-normalization',
+            columns: [
+                { data: 'Timestamp' },
                 { data: 'RmTmp - DH01_ROW01_LA_TTHT01' },
                 { data: 'RmTmp - DH01_ROW01_LA_TTHT02' },
                 { data: 'RmTmp - DH01_ROW01_LA_TTHT03' },
