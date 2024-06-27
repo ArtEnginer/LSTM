@@ -14,6 +14,9 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 import os
 
+import matplotlib
+matplotlib.use('Agg')
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 UPLOAD_FOLDER = 'uploads'
@@ -472,3 +475,5 @@ if __name__ == '__main__':
     if not os.path.exists('uploads'):
         os.makedirs('uploads')
     app.run(debug=True)
+
+
