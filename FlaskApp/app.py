@@ -117,7 +117,6 @@ def modelling_proses():
         
         X_train, X_val = X[:train_size], X[train_size:train_size + validation_size]
         y_train, y_val = y[:train_size], y[train_size:train_size + validation_size]
-        X_test, y_test = X[train_size + validation_size:], y[train_size + validation_size:]
         
         if optimizer == 'adam':
             optimizer = Adam()

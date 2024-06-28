@@ -33,5 +33,10 @@
         "temperature": "24",
         "humidity": "59",
         "Timestamp": "2024-06-28 10:34:51"
+    },
+    {
+        "temperature": "25",
+        "humidity": "60",
+        "Timestamp": "2024-06-28 11:18:13"
     }
 ]
