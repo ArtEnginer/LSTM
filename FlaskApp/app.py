@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
-import base64
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
@@ -13,6 +12,9 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping
 
 import os
+import json
+import base64
+
 
 import matplotlib
 matplotlib.use('Agg')
@@ -194,7 +196,17 @@ def model_history():
 @app.route('/forecasting')
 def forecasting():
     active = 'forecasting'
-    return render_template('forecasting.html', active=active)
+    # cek if file model/sla.json exists
+    if os.path.exists('model/sla.json'):
+        # ambil data terakhir
+        with open('model/sla.json', 'r') as file:
+            sla_data = json.load(file)
+            sla_data = sla_data[-1]
+    else:
+        sla_data = None
+    # debugging sla_data
+    print(sla_data)
+    return render_template('forecasting.html', active=active, sla_data=sla_data)
 
 @app.route('/forecast', methods=['POST'])
 def forecast():
@@ -471,6 +483,38 @@ def dataset_visualization():
 @app.route('/model/<filename>')
 def model(filename):
     return send_file(f'model/{filename}', as_attachment=True)
+
+@app.route('/sla', methods=['POST'])
+def sla():
+    if request.method == 'POST':
+        # Get the JSON data from the request
+        data = request.get_json()
+        temperature = data.get('temperature')
+        humidity = data.get('humidity')
+
+        # Create a dictionary with the data
+        record = {
+            "temperature": temperature,
+            "humidity": humidity,
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        # Save the data to a JSON file
+        json_file_path = 'model/sla.json'
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r+') as file:
+                file_data = json.load(file)
+                file_data.append(record)
+                file.seek(0)
+                json.dump(file_data, file, indent=4)
+        else:
+            with open(json_file_path, 'w') as file:
+                json.dump([record], file, indent=4)
+
+        return jsonify({"message": "Data saved successfully"}), 200
+
+    return jsonify({"message": "Invalid request"}), 400
+    
 if __name__ == '__main__':
     if not os.path.exists('uploads'):
         os.makedirs('uploads')

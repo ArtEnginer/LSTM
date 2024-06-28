@@ -1,0 +1,37 @@
+[
+    {
+        "temperature": "24",
+        "humidity": "60",
+        "Timestamp": "2024-06-28 09:36:08"
+    },
+    {
+        "temperature": "24",
+        "humidity": "60",
+        "Timestamp": "2024-06-28 09:36:08"
+    },
+    {
+        "temperature": "28",
+        "humidity": "68",
+        "Timestamp": "2024-06-28 10:11:30"
+    },
+    {
+        "temperature": "25",
+        "humidity": "62",
+        "Timestamp": "2024-06-28 10:17:08"
+    },
+    {
+        "temperature": "26",
+        "humidity": "61",
+        "Timestamp": "2024-06-28 10:22:53"
+    },
+    {
+        "temperature": "20",
+        "humidity": "40",
+        "Timestamp": "2024-06-28 10:33:32"
+    },
+    {
+        "temperature": "24",
+        "humidity": "59",
+        "Timestamp": "2024-06-28 10:34:51"
+    }
+]
