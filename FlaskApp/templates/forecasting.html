@@ -4,19 +4,66 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h1 class="mt-4">Forecasting</h1>
+                <h4 class="mt-4">SLA (<i>Service Level Agreement</i>)</h4>
+
             </div>
             <div class="card-body">
+                <div class="alert alert-success " role="alert">
+                    <p>Last Updated: {{ sla_data.Timestamp }}</p>
+                    <p>Current SLA Temperature: {{ sla_data.temperature }}°C</p>
+                    <p>Current SLA Humidity: {{ sla_data.humidity }}%</p>
+                </div>
 
+                <p class="d-inline-flex gap-1 w-100">
+                    <a class="btn btn-primary w-100" data-bs-toggle="collapse" href="#collapseExample" role="button"
+                        aria-expanded="false" aria-controls="collapseExample">
+                        Update SLA
+                    </a>
+                </p>
+                <div class="collapse" id="collapseExample">
+                    <div class="card card-body">
+
+                        <form id="sla-form">
+                            <div class="form-group">
+                                <label for="temperature">SLA Temperature :</label>
+                                <input type="number" class="form-control" id="temperature" name="temperature" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="humidity">SLA Humidity :</label>
+                                <input type="number" class="form-control" id="humidity" name="humidity" required>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary mt-3 w-100">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mt-4">Forecasting</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning " role="alert">
+                    <p>
+                        Upload data terakhir untuk dilakukan prediksi
+                    </p>
+                    <p>
+                        Data yang diupload harus berupa file Excel (.xlsx)
+                    </p>
+                </div>
                 <form id="forecast-form" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="file">Upload Latest Data File:</label>
                         <input type="file" class="form-control-file" id="file" name="file" required>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-3">Predict</button>
+                    <button type="submit" class="btn btn-primary mt-3 w-100">Predict</button>
                 </form>
             </div>
         </div>
@@ -27,7 +74,8 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <div id="result" class="mt-5">
+                <div id="result" class="mt-5" data-sla-temperature="{{ sla_data.temperature }}"
+                    data-sla-humidity="{{ sla_data.humidity }}">
                     <!-- Results will be displayed here -->
                 </div>
             </div>
@@ -50,6 +98,8 @@
                 success: function (response) {
                     if (response.status === 'success') {
                         var predictions = response.predictions;
+                        var slaTemperature = $('#result').data('sla-temperature');
+                        var slaHumidity = $('#result').data('sla-humidity');
                         var resultHtml = '<h2>Prediction Results</h2>';
 
                         resultHtml += '<div class="row mt-3"><div class="col-md-6">';
@@ -57,12 +107,7 @@
                         resultHtml += '<table class="table table-bordered table-striped">';
                         resultHtml += '<thead class="thead-dark"><tr><th>Parameter</th><th>Value</th></tr></thead>';
                         resultHtml += '<tbody>';
-                        resultHtml += '<tr><td>Temperature 1</td><td>' + predictions['15_minutes']['temperature'][0] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 2</td><td>' + predictions['15_minutes']['temperature'][1] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 3</td><td>' + predictions['15_minutes']['temperature'][2] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 4</td><td>' + predictions['15_minutes']['temperature'][3] + '</td></tr>';
-                        resultHtml += '<tr><td>Humidity 1</td><td>' + predictions['15_minutes']['humidity'][0] + '</td></tr>';
-                        resultHtml += '<tr><td>Humidity 2</td><td>' + predictions['15_minutes']['humidity'][1] + '</td></tr>';
+                        resultHtml += formatPredictionRows(predictions['15_minutes'], slaTemperature, slaHumidity);
                         resultHtml += '</tbody></table></div>';
 
                         resultHtml += '<div class="col-md-6">';
@@ -70,12 +115,7 @@
                         resultHtml += '<table class="table table-bordered table-striped">';
                         resultHtml += '<thead class="thead-dark"><tr><th>Parameter</th><th>Value</th></tr></thead>';
                         resultHtml += '<tbody>';
-                        resultHtml += '<tr><td>Temperature 1</td><td>' + predictions['30_minutes']['temperature'][0] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 2</td><td>' + predictions['30_minutes']['temperature'][1] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 3</td><td>' + predictions['30_minutes']['temperature'][2] + '</td></tr>';
-                        resultHtml += '<tr><td>Temperature 4</td><td>' + predictions['30_minutes']['temperature'][3] + '</td></tr>';
-                        resultHtml += '<tr><td>Humidity 1</td><td>' + predictions['30_minutes']['humidity'][0] + '</td></tr>';
-                        resultHtml += '<tr><td>Humidity 2</td><td>' + predictions['30_minutes']['humidity'][1] + '</td></tr>';
+                        resultHtml += formatPredictionRows(predictions['30_minutes'], slaTemperature, slaHumidity);
                         resultHtml += '</tbody></table></div></div>';
 
                         $('#result').html(resultHtml);
@@ -88,6 +128,44 @@
                 }
             });
         });
+
+        document.getElementById('sla-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const temperature = document.getElementById('temperature').value;
+            const humidity = document.getElementById('humidity').value;
+
+            fetch('/sla', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ temperature: temperature, humidity: humidity })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('message:', data);
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('message:', error);
+                    document.getElementById('message').innerText = 'An error occurred. Please try again.';
+                });
+        });
     });
+
+    function formatPredictionRows(predictions, slaTemperature, slaHumidity) {
+        var rowsHtml = '';
+
+        predictions.temperature.forEach((temp, index) => {
+            rowsHtml += `<tr ${temp > slaTemperature ? 'class="table-danger"' : ''}><td>Temperature ${index + 1}</td><td>${temp}</td></tr>`;
+        });
+
+        predictions.humidity.forEach((hum, index) => {
+            rowsHtml += `<tr ${hum > slaHumidity ? 'class="table-danger"' : ''}><td>Humidity ${index + 1}</td><td>${hum}</td></tr>`;
+        });
+
+        return rowsHtml;
+    }
 </script>
 {% endblock %}
