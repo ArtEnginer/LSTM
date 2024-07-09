@@ -109,10 +109,24 @@ def modelling_proses():
         X, y = create_dataset(scaled_data, time_step)
         train_size = int(len(X) * train_size)
         validation_size = int(len(X) * validation_size)
+        # Ensure reproducibility by setting the random seed
+        np.random.seed(42)
+
+        # Shuffle indices
+        indices = np.arange(len(X))
+        np.random.shuffle(indices)
+
+        # Split data
+        train_indices = indices[:train_size]
+        val_indices = indices[train_size:]
+
+        X_train, X_val = X[train_indices], X[val_indices]
+        y_train, y_val = y[train_indices], y[val_indices]
+
+
+        # X_train, X_val = X[:train_size], X[train_size:train_size + validation_size]
+        # y_train, y_val = y[:train_size], y[train_size:train_size + validation_size]
         
-        X_train, X_val = X[:train_size], X[train_size:train_size + validation_size]
-        y_train, y_val = y[:train_size], y[train_size:train_size + validation_size]
-        X_test, y_test = X[train_size + validation_size:], y[train_size + validation_size:]
         
         if optimizer == 'adam':
             optimizer = Adam()
